@@ -18,11 +18,11 @@ export function CreateStandupCard({ onSubmit }: CreateStandupCardProps) {
   useEffect(() => {
     const fetchNotes = async () => {
       try {
-        const response: any = await getTomorrowNotes();
+        const response = await getTomorrowNotes() as { notes?: string };
         if (response.notes) {
           setPrePopulatedNotes(response.notes);
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error fetching tomorrow notes:', error);
       }
     };

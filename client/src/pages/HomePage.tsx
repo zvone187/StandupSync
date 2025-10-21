@@ -11,6 +11,28 @@ import { getWeekDays, getWeekRange, formatDateForAPI, isDateToday } from '@/util
 import { format, parseISO, eachDayOfInterval, compareDesc } from 'date-fns';
 import { Loader2 } from 'lucide-react';
 
+interface UserResponse {
+  user: {
+    _id: string;
+    email: string;
+    name: string;
+    role: string;
+  };
+}
+
+interface TeamResponse {
+  users: TeamMember[];
+}
+
+interface StandupsResponse {
+  standups: Standup[];
+}
+
+interface StandupResponse {
+  standup: Standup;
+  message?: string;
+}
+
 export function HomePage() {
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -28,9 +50,9 @@ export function HomePage() {
     const fetchInitialData = async () => {
       try {
         console.log('Fetching initial data...');
-        const [userResponse, teamResponse]: any = await Promise.all([
-          getCurrentUser(),
-          getTeamMembers(),
+        const [userResponse, teamResponse] = await Promise.all([
+          getCurrentUser() as Promise<UserResponse>,
+          getTeamMembers() as Promise<TeamResponse>,
         ]);
 
         const userId = userResponse.user._id;
@@ -39,11 +61,12 @@ export function HomePage() {
         setActiveTab(userId);
 
         console.log('Initial data loaded:', { userId, teamCount: teamResponse.users.length });
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error fetching initial data:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to load data';
         toast({
           title: 'Error',
-          description: error.message || 'Failed to load data',
+          description: errorMessage,
           variant: 'destructive',
         });
       } finally {
@@ -63,24 +86,25 @@ export function HomePage() {
         setLoading(true);
 
         if (activeTab === currentUserId) {
-          const response: any = await getMyStandups();
+          const response = await getMyStandups() as StandupsResponse;
           setStandups(response.standups);
           console.log('Loaded my stand-ups:', response.standups.length);
         } else {
           const { start, end } = getWeekRange(weekOffset);
-          const response: any = await getUserStandups(
+          const response = await getUserStandups(
             activeTab,
             formatDateForAPI(start),
             formatDateForAPI(end)
-          );
+          ) as StandupsResponse;
           setStandups(response.standups);
           console.log('Loaded user stand-ups:', response.standups.length);
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error('Error fetching stand-ups:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to load stand-ups';
         toast({
           title: 'Error',
-          description: error.message || 'Failed to load stand-ups',
+          description: errorMessage,
           variant: 'destructive',
         });
       } finally {
@@ -113,10 +137,10 @@ export function HomePage() {
     try {
       console.log('Creating stand-up for today...');
       const today = formatDateForAPI(new Date());
-      const response: any = await createStandup({
+      const response = await createStandup({
         date: today,
         ...data,
-      });
+      }) as StandupResponse;
 
       setStandups((prev) => [response.standup, ...prev]);
       toast({
@@ -124,11 +148,12 @@ export function HomePage() {
         description: 'Stand-up created successfully',
       });
       console.log('Stand-up created successfully');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error creating stand-up:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create stand-up';
       toast({
         title: 'Error',
-        description: error.message || 'Failed to create stand-up',
+        description: errorMessage,
         variant: 'destructive',
       });
     }
@@ -137,7 +162,7 @@ export function HomePage() {
   const handleUpdateStandup = async (id: string, data: { yesterday: string; today: string; blockers: string }) => {
     try {
       console.log('Updating stand-up:', id);
-      const response: any = await updateStandup(id, data);
+      const response = await updateStandup(id, data) as StandupResponse;
 
       setStandups((prev) =>
         prev.map((standup) => (standup._id === id ? response.standup : standup))
@@ -147,11 +172,12 @@ export function HomePage() {
         description: 'Stand-up updated successfully',
       });
       console.log('Stand-up updated successfully');
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error updating stand-up:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update stand-up';
       toast({
         title: 'Error',
-        description: error.message || 'Failed to update stand-up',
+        description: errorMessage,
         variant: 'destructive',
       });
     }
