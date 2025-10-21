@@ -67,8 +67,29 @@ FRONTEND_URL=http://localhost:5173
 • Blocker 1
 ```
 
+#### Slack Slash Command
+Users can submit standups directly from Slack using a slash command:
+
+**Command Format:**
+```
+/standup yesterday: task1, task2 | today: task1, task2 | blockers: blocker1
+```
+
+**Features:**
+- Creates or updates today's standup
+- Automatically posts to configured Slack channel
+- User is matched by Slack email to StandupSync account
+- Ephemeral response (only visible to the user)
+
+**Setup in Slack:**
+1. Go to your Slack app settings
+2. Navigate to "Slash Commands"
+3. Create new command: `/standup`
+4. Set Request URL to: `https://your-domain.com/api/slack/command`
+5. Save the command
+
 #### Configuration
-Set these environment variables (optional, for OAuth flow):
+Set these environment variables (optional, for OAuth flow and slash commands):
 ```
 SLACK_CLIENT_ID=your-slack-client-id
 SLACK_CLIENT_SECRET=your-slack-client-secret
@@ -233,6 +254,16 @@ SLACK_SIGNING_SECRET=your-slack-signing-secret
 #### POST /api/slack/disconnect (Admin only)
 - Disconnect Slack integration
 - Removes all Slack tokens and settings
+
+#### POST /api/slack/command
+- Handle Slack slash command for standup submission
+- Public endpoint (validates Slack signature if SLACK_SIGNING_SECRET is set)
+- Body: Slack slash command payload (application/x-www-form-urlencoded)
+  - `user_email`: Slack user's email
+  - `text`: Command text (yesterday: ..., today: ..., blockers: ...)
+  - `channel_id`, `team_id`: Slack workspace info
+- Creates or updates today's standup for the user
+- Automatically posts to configured Slack channel
 
 ## Services
 

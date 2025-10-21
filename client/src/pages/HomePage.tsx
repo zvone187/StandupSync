@@ -143,9 +143,17 @@ export function HomePage() {
     try {
       console.log('Creating stand-up for today...');
       const today = formatDateForAPI(new Date());
+
+      // Convert strings to arrays by splitting on newlines and filtering empty lines
+      const yesterdayWork = data.yesterday.split('\n').filter(line => line.trim());
+      const todayPlan = data.today.split('\n').filter(line => line.trim());
+      const blockers = data.blockers.split('\n').filter(line => line.trim());
+
       const response = await createStandup({
         date: today,
-        ...data,
+        yesterdayWork,
+        todayPlan,
+        blockers,
       }) as StandupResponse;
 
       setStandups((prev) => [response.standup, ...prev]);
@@ -168,7 +176,17 @@ export function HomePage() {
   const handleUpdateStandup = async (id: string, data: { yesterday: string; today: string; blockers: string }) => {
     try {
       console.log('Updating stand-up:', id);
-      const response = await updateStandup(id, data) as StandupResponse;
+
+      // Convert strings to arrays by splitting on newlines and filtering empty lines
+      const yesterdayWork = data.yesterday.split('\n').filter(line => line.trim());
+      const todayPlan = data.today.split('\n').filter(line => line.trim());
+      const blockers = data.blockers.split('\n').filter(line => line.trim());
+
+      const response = await updateStandup(id, {
+        yesterdayWork,
+        todayPlan,
+        blockers,
+      }) as StandupResponse;
 
       setStandups((prev) =>
         prev.map((standup) => (standup._id === id ? response.standup : standup))

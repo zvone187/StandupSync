@@ -76,7 +76,7 @@ export function ManageUsersPage() {
         const response = await updateUserRole(userId, data.role) as UserResponse;
         setUsers((prev) =>
           prev.map((user) =>
-            user._id === userId ? { ...user, role: data.role } : user
+            user._id === userId ? { ...user, role: response.user.role } : user
           )
         );
         toast({
@@ -90,7 +90,7 @@ export function ManageUsersPage() {
         const response = await updateUserStatus(userId, data.isActive) as UserResponse;
         setUsers((prev) =>
           prev.map((user) =>
-            user._id === userId ? { ...user, isActive: data.isActive } : user
+            user._id === userId ? { ...user, isActive: response.user.isActive } : user
           )
         );
         toast({

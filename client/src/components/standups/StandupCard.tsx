@@ -21,9 +21,9 @@ export function StandupCard({ standup, date, isOwn, onUpdate }: StandupCardProps
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  const isSubmitted = standup?.isSubmitted || false;
+  const isSubmitted = standup?.submittedAt ? true : false;
   const canEdit = isOwn && canEditStandup(date);
-  const blockerCount = standup ? countBlockers(standup.blockers) : 0;
+  const blockerCount = standup ? standup.blockers.length : 0;
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -82,34 +82,46 @@ export function StandupCard({ standup, date, isOwn, onUpdate }: StandupCardProps
           {isEditing && standup ? (
             <StandupForm
               initialData={{
-                yesterday: standup.yesterday,
-                today: standup.today,
-                blockers: standup.blockers,
+                yesterday: standup.yesterdayWork.join('\n'),
+                today: standup.todayPlan.join('\n'),
+                blockers: standup.blockers.join('\n'),
               }}
               onSave={handleSave}
               onCancel={handleCancel}
             />
           ) : (
             <>
-              {standup && <BlockersSection blockers={standup.blockers} />}
+              {standup && <BlockersSection blockers={standup.blockers.join('\n')} />}
 
               <div className="space-y-4">
                 <div className="bg-card/50 rounded-lg p-4 border">
                   <h4 className="font-semibold text-sm text-muted-foreground mb-2">
                     What did you work on yesterday?
                   </h4>
-                  <p className="text-base whitespace-pre-wrap font-mono">
-                    {standup?.yesterday || <span className="text-muted-foreground italic">No updates</span>}
-                  </p>
+                  {standup?.yesterdayWork.length > 0 ? (
+                    <ul className="list-disc list-inside space-y-1">
+                      {standup.yesterdayWork.map((item, idx) => (
+                        <li key={idx} className="text-base">{item}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-muted-foreground italic">No updates</span>
+                  )}
                 </div>
 
                 <div className="bg-card/50 rounded-lg p-4 border">
                   <h4 className="font-semibold text-sm text-muted-foreground mb-2">
                     What are you working on today?
                   </h4>
-                  <p className="text-base whitespace-pre-wrap font-mono">
-                    {standup?.today || <span className="text-muted-foreground italic">No updates</span>}
-                  </p>
+                  {standup?.todayPlan.length > 0 ? (
+                    <ul className="list-disc list-inside space-y-1">
+                      {standup.todayPlan.map((item, idx) => (
+                        <li key={idx} className="text-base">{item}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <span className="text-muted-foreground italic">No updates</span>
+                  )}
                 </div>
               </div>
 

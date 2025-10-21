@@ -2,11 +2,10 @@ export interface Standup {
   _id: string;
   userId: string;
   date: string;
-  yesterday: string;
-  today: string;
-  blockers: string;
-  isSubmitted: boolean;
-  createdAt: string;
+  yesterdayWork: string[];
+  todayPlan: string[];
+  blockers: string[];
+  submittedAt: string;
   updatedAt: string;
 }
 
