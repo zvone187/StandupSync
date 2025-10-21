@@ -11,6 +11,11 @@ export interface IUser extends Document {
   isActive: boolean;
   role: RoleValues;
   refreshToken: string;
+  teamId: mongoose.Types.ObjectId;
+  invitedBy?: mongoose.Types.ObjectId;
+  invitedAt?: Date;
+  isInvited: boolean;
+  name?: string;
 }
 
 const schema = new Schema<IUser>({
@@ -49,6 +54,26 @@ const schema = new Schema<IUser>({
     unique: true,
     index: true,
     default: () => randomUUID(),
+  },
+  teamId: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    index: true,
+  },
+  invitedBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  invitedAt: {
+    type: Date,
+  },
+  isInvited: {
+    type: Boolean,
+    default: false,
+  },
+  name: {
+    type: String,
   },
 }, {
   versionKey: false,

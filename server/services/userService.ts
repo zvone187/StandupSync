@@ -1,10 +1,16 @@
 import User, { IUser } from '../models/User';
 import { generatePasswordHash, validatePassword } from '../utils/password';
+import { ROLES } from 'shared';
+import mongoose from 'mongoose';
 
 interface CreateUserData {
   email: string;
   password: string;
   name?: string;
+  role?: string;
+  teamId?: mongoose.Types.ObjectId;
+  invitedBy?: mongoose.Types.ObjectId;
+  isInvited?: boolean;
 }
 
 class UserService {
@@ -68,7 +74,7 @@ class UserService {
     }
   }
 
-  static async create({ email, password, name = '' }: CreateUserData): Promise<IUser> {
+  static async create({ email, password, name = '', role, teamId, invitedBy, isInvited = false }: CreateUserData): Promise<IUser> {
     if (!email) throw new Error('Email is required');
     if (!password) throw new Error('Password is required');
 
@@ -77,14 +83,32 @@ class UserService {
 
     const hash = await generatePasswordHash(password);
 
+    // Check if this is the first user OR a non-invited user (self-registration)
+    // These users become admins with their own team
+    const userCount = await User.countDocuments();
+    const isFirstUser = userCount === 0;
+    const isSelfRegistration = !isInvited && !teamId;
+
     try {
       const user = new User({
         email,
         password: hash,
         name,
+        role: (isFirstUser || isSelfRegistration) ? ROLES.ADMIN : (role || ROLES.USER),
+        teamId: (isFirstUser || isSelfRegistration) ? undefined : teamId, // Will be set after save
+        invitedBy,
+        isInvited,
+        invitedAt: isInvited ? new Date() : undefined,
       });
 
+      // For self-registration (first user or non-invited), set teamId to their own _id
+      if (isFirstUser || isSelfRegistration) {
+        user.teamId = user._id as mongoose.Types.ObjectId;
+      }
+
       await user.save();
+      const logMessage = isFirstUser ? ' (first user - admin)' : (isSelfRegistration ? ' (self-registered - admin)' : '');
+      console.log(`✅ Created user ${email} with role ${user.role}${logMessage}`);
       return user;
     } catch (err) {
       throw new Error(`Database error while creating new user: ${err}`);
@@ -103,6 +127,70 @@ class UserService {
       return user;
     } catch (err) {
       throw new Error(`Database error while setting user password: ${err}`);
+    }
+  }
+
+  /**
+   * Get all users in a team
+   */
+  static async getTeamMembers(teamId: mongoose.Types.ObjectId): Promise<IUser[]> {
+    try {
+      return await User.find({ teamId }).sort({ createdAt: -1 }).exec();
+    } catch (err) {
+      throw new Error(`Database error while getting team members: ${err}`);
+    }
+  }
+
+  /**
+   * Get all admins (users who are their own team)
+   */
+  static async getAdmins(): Promise<IUser[]> {
+    try {
+      return await User.find({ role: ROLES.ADMIN }).exec();
+    } catch (err) {
+      throw new Error(`Database error while getting admins: ${err}`);
+    }
+  }
+
+  /**
+   * Check if user is admin of their team
+   */
+  static async isTeamAdmin(userId: string, teamId: mongoose.Types.ObjectId): Promise<boolean> {
+    try {
+      const user = await User.findOne({ _id: userId, teamId, role: ROLES.ADMIN }).exec();
+      return !!user;
+    } catch (err) {
+      throw new Error(`Database error while checking if user is team admin: ${err}`);
+    }
+  }
+
+  /**
+   * Update user role
+   */
+  static async updateRole(userId: string, role: string): Promise<IUser | null> {
+    try {
+      return await User.findOneAndUpdate(
+        { _id: userId },
+        { role },
+        { new: true }
+      ).exec();
+    } catch (err) {
+      throw new Error(`Database error while updating user role: ${err}`);
+    }
+  }
+
+  /**
+   * Activate or deactivate user
+   */
+  static async setActiveStatus(userId: string, isActive: boolean): Promise<IUser | null> {
+    try {
+      return await User.findOneAndUpdate(
+        { _id: userId },
+        { isActive },
+        { new: true }
+      ).exec();
+    } catch (err) {
+      throw new Error(`Database error while updating user active status: ${err}`);
     }
   }
 }
