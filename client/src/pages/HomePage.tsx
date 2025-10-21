@@ -8,7 +8,7 @@ import { getMyStandups, getUserStandups, createStandup, updateStandup } from '@/
 import { TeamMember, Standup } from '@/types/standup';
 import { useToast } from '@/hooks/useToast';
 import { getWeekDays, getWeekRange, formatDateForAPI, isDateToday } from '@/utils/dateUtils';
-import { format, parseISO, eachDayOfInterval, compareDesc } from 'date-fns';
+import { format, parseISO, compareDesc } from 'date-fns';
 import { Loader2 } from 'lucide-react';
 
 interface UserResponse {
@@ -89,6 +89,11 @@ export function HomePage() {
           const response = await getMyStandups() as StandupsResponse;
           setStandups(response.standups);
           console.log('Loaded my stand-ups:', response.standups.length);
+          
+          // Auto-select today's date for own stand-ups
+          if (!selectedDate) {
+            setSelectedDate(new Date());
+          }
         } else {
           const { start, end } = getWeekRange(weekOffset);
           const response = await getUserStandups(
@@ -119,7 +124,13 @@ export function HomePage() {
     console.log('Switching to user tab:', userId);
     setActiveTab(userId);
     setWeekOffset(0);
-    setSelectedDate(null);
+    
+    // Auto-select today for own stand-ups, clear for others
+    if (userId === currentUserId) {
+      setSelectedDate(new Date());
+    } else {
+      setSelectedDate(null);
+    }
   };
 
   const handleWeekChange = (offset: number) => {
@@ -184,23 +195,15 @@ export function HomePage() {
   };
 
   const getDisplayDates = (): string[] => {
-    if (isViewingOwnStandups) {
-      const allDates = standups.map((s) => s.date);
-      const uniqueDates = Array.from(new Set(allDates));
-      return uniqueDates.sort((a, b) => compareDesc(parseISO(a), parseISO(b)));
-    } else {
-      if (selectedDate) {
-        return [formatDateForAPI(selectedDate)];
-      }
-      const { start, end } = getWeekRange(weekOffset);
-      const allDatesInRange = eachDayOfInterval({ start, end });
-      return allDatesInRange.map((date) => formatDateForAPI(date)).reverse();
+    if (selectedDate) {
+      return [formatDateForAPI(selectedDate)];
     }
+    return [];
   };
 
   const todayDate = formatDateForAPI(new Date());
   const hasTodayStandup = standups.some((s) => s.date === todayDate);
-  const shouldShowCreateCard = isViewingOwnStandups && !hasTodayStandup;
+  const shouldShowCreateCard = isViewingOwnStandups && !hasTodayStandup && selectedDate && formatDateForAPI(selectedDate) === todayDate;
 
   if (loading && teamMembers.length === 0) {
     return (
@@ -214,7 +217,7 @@ export function HomePage() {
     <div className="space-y-6 pb-20">
       <div className="space-y-4">
         <h1 className="text-3xl font-bold">Daily Stand-ups</h1>
-        
+
         <TeamMemberTabs
           currentUserId={currentUserId}
           teamMembers={teamMembers}
@@ -222,16 +225,15 @@ export function HomePage() {
           onTabChange={handleTabChange}
         />
 
-        {!isViewingOwnStandups && (
-          <WeekNavigation
-            weekDays={weekDays}
-            selectedDate={selectedDate}
-            weekOffset={weekOffset}
-            onDateSelect={handleDateSelect}
-            onWeekChange={handleWeekChange}
-            canGoBack={weekOffset > -1}
-          />
-        )}
+        <WeekNavigation
+          weekDays={weekDays}
+          selectedDate={selectedDate}
+          weekOffset={weekOffset}
+          onDateSelect={handleDateSelect}
+          onWeekChange={handleWeekChange}
+          canGoBack={isViewingOwnStandups ? true : weekOffset > -1}
+          standups={standups}
+        />
       </div>
 
       <div className="space-y-4">
