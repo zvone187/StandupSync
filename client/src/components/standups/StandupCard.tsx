@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp, Edit, CheckCircle, XCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp, Edit, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import { Standup } from '@/types/standup';
 import { formatDate, canEditStandup } from '@/utils/dateUtils';
+import { countBlockers } from '@/utils/standupUtils';
 import { BlockersSection } from './BlockersSection';
 import { StandupForm } from './StandupForm';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 
 interface StandupCardProps {
   standup: Standup | null;
@@ -21,6 +23,7 @@ export function StandupCard({ standup, date, isOwn, onUpdate }: StandupCardProps
 
   const isSubmitted = standup?.isSubmitted || false;
   const canEdit = isOwn && canEditStandup(date);
+  const blockerCount = standup ? countBlockers(standup.blockers) : 0;
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -55,9 +58,17 @@ export function StandupCard({ standup, date, isOwn, onUpdate }: StandupCardProps
             ) : (
               <XCircle className="h-5 w-5 text-gray-400" />
             )}
-            <div>
-              <h3 className="text-lg font-semibold">{formatDate(date)}</h3>
-              {!isSubmitted && <p className="text-sm text-muted-foreground">Not submitted</p>}
+            <div className="flex items-center gap-3">
+              <div>
+                <h3 className="text-lg font-semibold">{formatDate(date)}</h3>
+                {!isSubmitted && <p className="text-sm text-muted-foreground">Not submitted</p>}
+              </div>
+              {blockerCount > 0 && (
+                <Badge variant="destructive" className="gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  {blockerCount} {blockerCount === 1 ? 'Blocker' : 'Blockers'}
+                </Badge>
+              )}
             </div>
           </div>
           <Button variant="ghost" size="icon">
@@ -87,7 +98,7 @@ export function StandupCard({ standup, date, isOwn, onUpdate }: StandupCardProps
                   <h4 className="font-semibold text-sm text-muted-foreground mb-2">
                     What did you work on yesterday?
                   </h4>
-                  <p className="text-base whitespace-pre-wrap">
+                  <p className="text-base whitespace-pre-wrap font-mono">
                     {standup?.yesterday || <span className="text-muted-foreground italic">No updates</span>}
                   </p>
                 </div>
@@ -96,7 +107,7 @@ export function StandupCard({ standup, date, isOwn, onUpdate }: StandupCardProps
                   <h4 className="font-semibold text-sm text-muted-foreground mb-2">
                     What are you working on today?
                   </h4>
-                  <p className="text-base whitespace-pre-wrap">
+                  <p className="text-base whitespace-pre-wrap font-mono">
                     {standup?.today || <span className="text-muted-foreground italic">No updates</span>}
                   </p>
                 </div>

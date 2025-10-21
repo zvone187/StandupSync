@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
+import { DynamicItemInput } from './DynamicItemInput';
+import { formatTextToItems, formatItemsToText } from '@/utils/standupUtils';
 
 interface StandupFormProps {
   initialData?: {
@@ -14,57 +14,49 @@ interface StandupFormProps {
 }
 
 export function StandupForm({ initialData, onSave, onCancel }: StandupFormProps) {
-  const [yesterday, setYesterday] = useState(initialData?.yesterday || '');
-  const [today, setToday] = useState(initialData?.today || '');
-  const [blockers, setBlockers] = useState(initialData?.blockers || '');
+  const [yesterdayItems, setYesterdayItems] = useState<string[]>(
+    formatTextToItems(initialData?.yesterday || '')
+  );
+  const [todayItems, setTodayItems] = useState<string[]>(
+    formatTextToItems(initialData?.today || '')
+  );
+  const [blockerItems, setBlockerItems] = useState<string[]>(
+    formatTextToItems(initialData?.blockers || '')
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave({ yesterday, today, blockers });
+    onSave({
+      yesterday: formatItemsToText(yesterdayItems),
+      today: formatItemsToText(todayItems),
+      blockers: formatItemsToText(blockerItems),
+    });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="yesterday" className="text-base font-semibold">
-          What did you work on yesterday?
-        </Label>
-        <Textarea
-          id="yesterday"
-          value={yesterday}
-          onChange={(e) => setYesterday(e.target.value)}
-          placeholder="Enter your updates from yesterday..."
-          className="min-h-[100px] resize-y"
-        />
-      </div>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <DynamicItemInput
+        items={yesterdayItems}
+        onChange={setYesterdayItems}
+        label="What did you work on yesterday?"
+        placeholder="Enter what you worked on..."
+      />
 
-      <div className="space-y-2">
-        <Label htmlFor="today" className="text-base font-semibold">
-          What are you working on today?
-        </Label>
-        <Textarea
-          id="today"
-          value={today}
-          onChange={(e) => setToday(e.target.value)}
-          placeholder="Enter what you're working on today..."
-          className="min-h-[100px] resize-y"
-        />
-      </div>
+      <DynamicItemInput
+        items={todayItems}
+        onChange={setTodayItems}
+        label="What are you working on today?"
+        placeholder="Enter what you're working on..."
+      />
 
-      <div className="space-y-2">
-        <Label htmlFor="blockers" className="text-base font-semibold">
-          Blockers
-        </Label>
-        <Textarea
-          id="blockers"
-          value={blockers}
-          onChange={(e) => setBlockers(e.target.value)}
-          placeholder="Any blockers? (Leave empty if none)"
-          className="min-h-[80px] resize-y"
-        />
-      </div>
+      <DynamicItemInput
+        items={blockerItems}
+        onChange={setBlockerItems}
+        label="Blockers"
+        placeholder="Any blockers? (Leave empty if none)"
+      />
 
-      <div className="flex gap-2 justify-end">
+      <div className="flex gap-2 justify-end pt-4 border-t">
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>

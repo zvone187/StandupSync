@@ -8,6 +8,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute"
 import { Layout } from "./components/Layout"
 import { BlankPage } from "./pages/BlankPage"
 import { HomePage } from "./pages/HomePage"
+import { ManageUsersPage } from "./pages/ManageUsersPage"
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/" element={<ProtectedRoute> <Layout /> </ProtectedRoute>}>
             <Route index element={<HomePage />} />
+            <Route path="manage-users" element={<ManageUsersPage />} />
           </Route>
           <Route path="*" element={<BlankPage />} />
         </Routes>
