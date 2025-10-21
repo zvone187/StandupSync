@@ -4,7 +4,7 @@ import { WeekNavigation } from '@/components/standups/WeekNavigation';
 import { StandupsList } from '@/components/standups/StandupsList';
 import { CreateStandupCard } from '@/components/standups/CreateStandupCard';
 import { getTeamMembers, getCurrentUser } from '@/api/users';
-import { getMyStandups, getUserStandups, createStandup, updateStandup } from '@/api/standups';
+import { getStandupsRange, createStandup, updateStandup } from '@/api/standups';
 import { TeamMember, Standup } from '@/types/standup';
 import { useToast } from '@/hooks/useToast';
 import { getWeekDays, getWeekRange, formatDateForAPI, isDateToday } from '@/utils/dateUtils';
@@ -85,24 +85,19 @@ export function HomePage() {
         console.log('Fetching stand-ups for user:', activeTab);
         setLoading(true);
 
-        if (activeTab === currentUserId) {
-          const response = await getMyStandups() as StandupsResponse;
-          setStandups(response.standups);
-          console.log('Loaded my stand-ups:', response.standups.length);
-          
-          // Auto-select today's date for own stand-ups
-          if (!selectedDate) {
-            setSelectedDate(new Date());
-          }
-        } else {
-          const { start, end } = getWeekRange(weekOffset);
-          const response = await getUserStandups(
-            activeTab,
-            formatDateForAPI(start),
-            formatDateForAPI(end)
-          ) as StandupsResponse;
-          setStandups(response.standups);
-          console.log('Loaded user stand-ups:', response.standups.length);
+        const { start, end } = getWeekRange(weekOffset);
+        const response = await getStandupsRange({
+          startDate: formatDateForAPI(start),
+          endDate: formatDateForAPI(end),
+          userId: activeTab,
+        }) as StandupsResponse;
+
+        setStandups(response.standups);
+        console.log('Loaded stand-ups:', response.standups.length);
+
+        // Auto-select today's date for own stand-ups
+        if (activeTab === currentUserId && !selectedDate) {
+          setSelectedDate(new Date());
         }
       } catch (error: unknown) {
         console.error('Error fetching stand-ups:', error);
@@ -118,7 +113,7 @@ export function HomePage() {
     };
 
     fetchStandups();
-  }, [activeTab, currentUserId, weekOffset, toast]);
+  }, [activeTab, currentUserId, weekOffset, toast, selectedDate]);
 
   const handleTabChange = (userId: string) => {
     console.log('Switching to user tab:', userId);

@@ -1,6 +1,14 @@
 import * as postmark from 'postmark';
 
-const client = new postmark.ServerClient(process.env.POSTMARK_API_KEY || '');
+/**
+ * Get or create Postmark client
+ */
+function getPostmarkClient(): postmark.ServerClient | null {
+  if (!process.env.POSTMARK_API_KEY || process.env.POSTMARK_API_KEY === 'your-postmark-api-key-here') {
+    return null;
+  }
+  return new postmark.ServerClient(process.env.POSTMARK_API_KEY);
+}
 
 export interface InvitationEmailData {
   toEmail: string;
@@ -16,7 +24,8 @@ export interface InvitationEmailData {
 export async function sendInvitationEmail(data: InvitationEmailData): Promise<void> {
   console.log(`📧 Sending invitation email to ${data.toEmail}`);
 
-  if (!process.env.POSTMARK_API_KEY) {
+  const client = getPostmarkClient();
+  if (!client) {
     console.warn('⚠️ POSTMARK_API_KEY not configured, skipping email send');
     return;
   }
@@ -110,7 +119,8 @@ If you didn't expect this invitation, you can safely ignore this email.
 export async function sendWelcomeEmail(email: string, name: string): Promise<void> {
   console.log(`📧 Sending welcome email to ${email}`);
 
-  if (!process.env.POSTMARK_API_KEY) {
+  const client = getPostmarkClient();
+  if (!client) {
     console.warn('⚠️ POSTMARK_API_KEY not configured, skipping email send');
     return;
   }

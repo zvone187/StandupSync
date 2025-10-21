@@ -34,6 +34,37 @@ const requireUser = (allowedRoles: string[] = ALL_ROLES) => {
   };
 };
 
+/**
+ * Middleware to require specific role(s)
+ * Usage: requireRole('admin') or requireRole(['admin', 'moderator'])
+ */
+const requireRole = (roles: string | string[]) => {
+  const allowedRoles = Array.isArray(roles) ? roles : [roles];
+  return async (req: AuthRequest, res: Response, next: NextFunction) => {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ error: 'Unauthorized' });
+
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as jwt.JwtPayload;
+      const user = await UserService.get(decoded.sub);
+      if (!user) {
+        return res.status(401).json({ error: 'User not found' });
+      }
+
+      // Check if user has one of the required roles
+      if (!allowedRoles.includes(user.role)) {
+        return res.status(403).json({ error: 'Insufficient permissions' });
+      }
+
+      req.user = user;
+      next();
+    } catch {
+      return res.status(403).json({ error: 'Invalid or expired token' });
+    }
+  };
+};
+
 export {
   requireUser,
+  requireRole,
 };

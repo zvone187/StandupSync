@@ -3,7 +3,7 @@ import { requireUser, requireRole } from './middlewares/auth';
 import UserService from '../services/userService';
 import { sendInvitationEmail } from '../services/emailService';
 import { ROLES } from 'shared';
-const cryptoRandomString = require('crypto-random-string');
+import cryptoRandomString from 'crypto-random-string';
 
 const router = express.Router();
 
@@ -11,7 +11,7 @@ const router = express.Router();
 // Endpoint: GET /api/users/team
 // Request: {}
 // Response: { users: Array<User> }
-router.get('/team', requireUser, async (req: Request, res: Response) => {
+router.get('/team', requireUser(), async (req: Request, res: Response) => {
   try {
     const currentUser = req.user;
 
@@ -33,7 +33,7 @@ router.get('/team', requireUser, async (req: Request, res: Response) => {
 // Endpoint: GET /api/users/me
 // Request: {}
 // Response: { user: User }
-router.get('/me', requireUser, async (req: Request, res: Response) => {
+router.get('/me', requireUser(), async (req: Request, res: Response) => {
   try {
     const user = req.user;
 

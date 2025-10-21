@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { UserManagementTable } from '@/components/admin/UserManagementTable';
-import { getAllUsers, updateUser, deleteUser, getCurrentUser } from '@/api/users';
+import { getAllUsers, updateUserRole, updateUserStatus, deleteUser, getCurrentUser } from '@/api/users';
 import { useToast } from '@/hooks/useToast';
 import { Loader2, Users } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -70,18 +70,35 @@ export function ManageUsersPage() {
   const handleUpdateUser = async (userId: string, data: { role?: string; isActive?: boolean }) => {
     try {
       console.log('Updating user:', userId, data);
-      const response = await updateUser(userId, data) as UserResponse;
 
-      setUsers((prev) =>
-        prev.map((user) =>
-          user._id === userId ? { ...user, ...data } : user
-        )
-      );
+      // Handle role update
+      if (data.role !== undefined) {
+        const response = await updateUserRole(userId, data.role) as UserResponse;
+        setUsers((prev) =>
+          prev.map((user) =>
+            user._id === userId ? { ...user, role: data.role } : user
+          )
+        );
+        toast({
+          title: 'Success',
+          description: 'User role updated successfully',
+        });
+      }
 
-      toast({
-        title: 'Success',
-        description: response.message || 'User updated successfully',
-      });
+      // Handle status update
+      if (data.isActive !== undefined) {
+        const response = await updateUserStatus(userId, data.isActive) as UserResponse;
+        setUsers((prev) =>
+          prev.map((user) =>
+            user._id === userId ? { ...user, isActive: data.isActive } : user
+          )
+        );
+        toast({
+          title: 'Success',
+          description: data.isActive ? 'User activated successfully' : 'User deactivated successfully',
+        });
+      }
+
       console.log('User updated successfully');
     } catch (error: unknown) {
       console.error('Error updating user:', error);

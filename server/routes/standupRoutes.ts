@@ -10,7 +10,7 @@ const router = express.Router();
 // Endpoint: GET /api/standups
 // Request: { date?: string, userId?: string }
 // Response: { standups: Array<Standup> }
-router.get('/', requireUser, async (req: Request, res: Response) => {
+router.get('/', requireUser(), async (req: Request, res: Response) => {
   try {
     const currentUser = req.user;
     const { date, userId } = req.query;
@@ -54,7 +54,7 @@ router.get('/', requireUser, async (req: Request, res: Response) => {
 // Endpoint: GET /api/standups/range
 // Request: { startDate: string, endDate: string, userId?: string }
 // Response: { standups: Array<Standup> }
-router.get('/range', requireUser, async (req: Request, res: Response) => {
+router.get('/range', requireUser(), async (req: Request, res: Response) => {
   try {
     const currentUser = req.user;
     const { startDate, endDate, userId } = req.query;
@@ -97,7 +97,7 @@ router.get('/range', requireUser, async (req: Request, res: Response) => {
 // Endpoint: GET /api/standups/team/:date
 // Request: {}
 // Response: { standups: Array<Standup> }
-router.get('/team/:date', requireUser, async (req: Request, res: Response) => {
+router.get('/team/:date', requireUser(), async (req: Request, res: Response) => {
   try {
     const currentUser = req.user;
     const { date } = req.params;
@@ -130,7 +130,7 @@ router.get('/team/:date', requireUser, async (req: Request, res: Response) => {
 // Endpoint: POST /api/standups
 // Request: { date: string, yesterdayWork: string[], todayPlan: string[], blockers: string[] }
 // Response: { standup: Standup }
-router.post('/', requireUser, async (req: Request, res: Response) => {
+router.post('/', requireUser(), async (req: Request, res: Response) => {
   try {
     const currentUser = req.user;
     const { date, yesterdayWork, todayPlan, blockers } = req.body;
@@ -204,7 +204,7 @@ router.post('/', requireUser, async (req: Request, res: Response) => {
 // Endpoint: PUT /api/standups/:id
 // Request: { yesterdayWork?: string[], todayPlan?: string[], blockers?: string[] }
 // Response: { standup: Standup }
-router.put('/:id', requireUser, async (req: Request, res: Response) => {
+router.put('/:id', requireUser(), async (req: Request, res: Response) => {
   try {
     const currentUser = req.user;
     const { id } = req.params;
@@ -267,7 +267,7 @@ router.put('/:id', requireUser, async (req: Request, res: Response) => {
 // Endpoint: DELETE /api/standups/:id
 // Request: {}
 // Response: { message: string }
-router.delete('/:id', requireUser, async (req: Request, res: Response) => {
+router.delete('/:id', requireUser(), async (req: Request, res: Response) => {
   try {
     const currentUser = req.user;
     const { id } = req.params;
