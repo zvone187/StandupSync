@@ -72,7 +72,7 @@ const setupInterceptors = (apiInstance: typeof axios) => {
           if (originalRequest.headers) {
             originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           }
-          return localApi;
+          return localApi(originalRequest);
         } catch (err) {
           localStorage.removeItem('refreshToken');
           localStorage.removeItem('accessToken');

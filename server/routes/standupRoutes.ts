@@ -31,10 +31,9 @@ router.get('/', requireUser(), async (req: Request, res: Response) => {
 
     // Filter by date if provided
     if (date) {
-      const targetDate = new Date(date as string);
-      const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
-      const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
-      query.date = { $gte: startOfDay, $lte: endOfDay };
+      // Parse date as UTC to avoid timezone issues
+      const targetDate = new Date(date as string + 'T00:00:00.000Z');
+      query.date = targetDate;
     }
 
     console.log(`📋 Fetching standups for query:`, query);
@@ -67,11 +66,15 @@ router.get('/range', requireUser(), async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'startDate and endDate are required' });
     }
 
+    // Parse dates as UTC to avoid timezone issues
+    const startDateUTC = new Date(startDate as string + 'T00:00:00.000Z');
+    const endDateUTC = new Date(endDate as string + 'T23:59:59.999Z');
+
     const query: any = {
       teamId: currentUser.teamId,
       date: {
-        $gte: new Date(startDate as string),
-        $lte: new Date(endDate as string),
+        $gte: startDateUTC,
+        $lte: endDateUTC,
       },
     };
 
@@ -106,14 +109,13 @@ router.get('/team/:date', requireUser(), async (req: Request, res: Response) => 
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const targetDate = new Date(date);
-    const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
-    const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
+    // Parse date as UTC to avoid timezone issues
+    const targetDate = new Date(date + 'T00:00:00.000Z');
 
     console.log(`👥 Fetching team standups for ${date}`);
     const standups = await Standup.find({
       teamId: currentUser.teamId,
-      date: { $gte: startOfDay, $lte: endOfDay },
+      date: targetDate,
     })
       .populate('userId', 'name email')
       .sort({ submittedAt: -1 })
@@ -145,14 +147,13 @@ router.post('/', requireUser(), async (req: Request, res: Response) => {
 
     console.log(`📝 Creating standup for ${currentUser.email} on ${date}`);
 
-    // Check if standup already exists for this user and date
-    const targetDate = new Date(date);
-    const startOfDay = new Date(targetDate.setHours(0, 0, 0, 0));
-    const endOfDay = new Date(targetDate.setHours(23, 59, 59, 999));
+    // Parse date as UTC to avoid timezone issues
+    const targetDate = new Date(date + 'T00:00:00.000Z');
 
+    // Check if standup already exists for this user and date
     const existingStandup = await Standup.findOne({
       userId: currentUser._id,
-      date: { $gte: startOfDay, $lte: endOfDay },
+      date: targetDate,
     });
 
     if (existingStandup) {
@@ -163,7 +164,7 @@ router.post('/', requireUser(), async (req: Request, res: Response) => {
     const standup = new Standup({
       userId: currentUser._id,
       teamId: currentUser.teamId,
-      date: new Date(date),
+      date: targetDate,
       yesterdayWork: yesterdayWork || [],
       todayPlan: todayPlan || [],
       blockers: blockers || [],
