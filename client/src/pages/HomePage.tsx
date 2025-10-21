@@ -215,7 +215,11 @@ export function HomePage() {
   };
 
   const todayDate = formatDateForAPI(new Date());
-  const hasTodayStandup = standups.some((s) => s.date === todayDate);
+  // Normalize standup dates to YYYY-MM-DD format for comparison
+  const hasTodayStandup = standups.some((s) => {
+    const standupDate = s.date.split('T')[0]; // Extract YYYY-MM-DD from ISO string
+    return standupDate === todayDate;
+  });
   const shouldShowCreateCard = isViewingOwnStandups && !hasTodayStandup && selectedDate && formatDateForAPI(selectedDate) === todayDate;
 
   if (loading && teamMembers.length === 0) {
