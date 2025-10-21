@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { UserManagementTable } from '@/components/admin/UserManagementTable';
-import { getAllUsers, updateUserRole, updateUserStatus, deleteUser, getCurrentUser } from '@/api/users';
+import { getTeamMembers, updateUserRole, updateUserStatus, deleteUser, getCurrentUser } from '@/api/users';
 import { useToast } from '@/hooks/useToast';
 import { Loader2, Users } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,18 +42,18 @@ export function ManageUsersPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log('Fetching users and current user...');
+        console.log('Fetching team members and current user...');
         const [usersResponse, currentUserResponse] = await Promise.all([
-          getAllUsers() as Promise<UsersResponse>,
+          getTeamMembers() as Promise<UsersResponse>,
           getCurrentUser() as Promise<CurrentUserResponse>,
         ]);
 
         setUsers(usersResponse.users);
         setCurrentUserId(currentUserResponse.user._id);
-        console.log('Users loaded:', usersResponse.users.length);
+        console.log('Team members loaded:', usersResponse.users.length);
       } catch (error: unknown) {
-        console.error('Error fetching users:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Failed to load users';
+        console.error('Error fetching team members:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to load team members';
         toast({
           title: 'Error',
           description: errorMessage,
