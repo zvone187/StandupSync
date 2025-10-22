@@ -171,7 +171,9 @@ Blockers:
 • None
 ```
 
-### Test 2: Use Slash Command (If Configured)
+### Test 2: Use Slash Commands (If Configured)
+
+#### Full Standup Submission: `/standup`
 
 In any Slack channel, type:
 ```
@@ -179,6 +181,23 @@ In any Slack channel, type:
 ```
 
 You should get a confirmation message and the standup should appear in both Slack and StandupSync.
+
+#### Quick Updates: `/standup-update`
+
+Throughout the day, add updates that will appear in tomorrow's standup:
+```
+/standup-update I completed the API integration
+```
+
+Response:
+```
+✅ Added to tomorrow's standup:
+• I completed the API integration
+
+This will appear in tomorrow's standup under "What you did today"
+```
+
+**See `SLACK_UPDATE_COMMAND.md` for detailed usage guide.**
 
 ---
 

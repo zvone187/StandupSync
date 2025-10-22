@@ -249,6 +249,94 @@ router.post('/command', express.urlencoded({ extended: true }), async (req: Requ
   }
 });
 
+// Description: Handle Slack slash command for adding standup updates throughout the day
+// Endpoint: POST /api/slack/update
+// Request: Slack slash command payload (application/x-www-form-urlencoded)
+// Response: Slack message response
+router.post('/update', express.urlencoded({ extended: true }), async (req: Request, res: Response) => {
+  try {
+    const { user_email, text, user_id, user_name } = req.body;
+
+    console.log(`📝 Received Slack update command from ${user_email || user_name}: "${text}"`);
+
+    if (!text || text.trim() === '') {
+      return res.json({
+        response_type: 'ephemeral',
+        text: '❌ Please provide an update. Usage: `/standup-update I completed the API integration`',
+      });
+    }
+
+    // Find user by email or Slack user ID
+    let user = await User.findOne({ email: user_email });
+
+    if (!user) {
+      return res.json({
+        response_type: 'ephemeral',
+        text: '❌ User not found in StandupSync. Please register at the web app first, or make sure your Slack email matches your StandupSync email.',
+      });
+    }
+
+    // Get tomorrow's date at UTC midnight
+    const now = new Date();
+    const tomorrow = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0));
+
+    // Find or create tomorrow's standup
+    let standup = await Standup.findOne({
+      userId: user._id,
+      date: tomorrow,
+    });
+
+    const updateItem = text.trim();
+
+    if (standup) {
+      // Add to existing standup's todayPlan
+      if (!standup.todayPlan.includes(updateItem)) {
+        standup.todayPlan.push(updateItem);
+        standup.updatedAt = new Date();
+        await standup.save();
+
+        console.log(`✅ Added update to tomorrow's standup for ${user.email}`);
+
+        return res.json({
+          response_type: 'ephemeral',
+          text: `✅ Added to tomorrow's standup:\n• ${updateItem}\n\n_This will appear in tomorrow's standup under "What you did today"_`,
+        });
+      } else {
+        return res.json({
+          response_type: 'ephemeral',
+          text: `ℹ️ This update already exists in tomorrow's standup:\n• ${updateItem}`,
+        });
+      }
+    } else {
+      // Create new standup for tomorrow with this item in todayPlan
+      const newStandup = new Standup({
+        userId: user._id,
+        teamId: user.teamId,
+        date: tomorrow,
+        yesterdayWork: [],
+        todayPlan: [updateItem],
+        blockers: [],
+        submittedAt: new Date(),
+        updatedAt: new Date(),
+      });
+      await newStandup.save();
+
+      console.log(`✅ Created tomorrow's standup with update for ${user.email}`);
+
+      return res.json({
+        response_type: 'ephemeral',
+        text: `✅ Added to tomorrow's standup:\n• ${updateItem}\n\n_This will appear in tomorrow's standup under "What you did today"_`,
+      });
+    }
+  } catch (error) {
+    console.error('❌ Error handling Slack update command:', error);
+    return res.json({
+      response_type: 'ephemeral',
+      text: '❌ Failed to add update. Please try again or use the web app.',
+    });
+  }
+});
+
 // Description: Disconnect Slack integration
 // Endpoint: POST /api/slack/disconnect
 // Request: {}
