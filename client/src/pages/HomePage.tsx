@@ -95,8 +95,8 @@ export function HomePage() {
         setStandups(response.standups);
         console.log('Loaded stand-ups:', response.standups.length);
 
-        // Auto-select today's date for own stand-ups
-        if (activeTab === currentUserId && !selectedDate) {
+        // Auto-select today's date when switching users (if no date is selected)
+        if (!selectedDate) {
           setSelectedDate(new Date());
         }
       } catch (error: unknown) {

@@ -282,4 +282,61 @@ router.post('/disconnect', requireRole(ROLES.ADMIN), async (req: Request, res: R
   }
 });
 
+// Description: Send a test message to Slack
+// Endpoint: POST /api/slack/test
+// Request: {}
+// Response: { success: boolean, message: string }
+router.post('/test', requireRole(ROLES.ADMIN), async (req: Request, res: Response) => {
+  try {
+    const currentUser = req.user;
+
+    if (!currentUser) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    console.log(`🧪 Sending test message to Slack for team ${currentUser.teamId}`);
+
+    // Get team settings
+    const settings = await TeamSettings.findOne({ teamId: currentUser.teamId });
+
+    if (!settings || !settings.slackAccessToken || !settings.slackChannelId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Slack is not configured for this team. Please configure Slack integration first.'
+      });
+    }
+
+    // Send test message
+    const testMessage = {
+      channel: settings.slackChannelId,
+      text: `🧪 *Test Message from StandupSync*\n\nThis is a test message to verify your Slack integration is working correctly!\n\n✅ If you can see this message, your Slack integration is configured properly.\n\n_Sent by ${currentUser.name || currentUser.email} at ${new Date().toLocaleString()}_`,
+    };
+
+    const { WebClient } = await import('@slack/web-api');
+    const client = new WebClient(settings.slackAccessToken);
+
+    const result = await client.chat.postMessage(testMessage);
+
+    if (result.ok) {
+      console.log(`✅ Test message sent successfully to channel ${settings.slackChannelId}`);
+      res.status(200).json({
+        success: true,
+        message: 'Test message sent successfully! Check your Slack channel.'
+      });
+    } else {
+      console.error(`❌ Failed to send test message:`, result.error);
+      res.status(400).json({
+        success: false,
+        error: result.error || 'Failed to send test message'
+      });
+    }
+  } catch (error) {
+    console.error('❌ Error sending test message:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to send test message'
+    });
+  }
+});
+
 export default router;

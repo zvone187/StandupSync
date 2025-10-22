@@ -1,4 +1,4 @@
-import { LogOut, Users } from "lucide-react"
+import { LogOut, Users, Settings } from "lucide-react"
 import { Button } from "./ui/button"
 import { ThemeToggle } from "./ui/theme-toggle"
 import { useAuth } from "@/contexts/AuthContext"
@@ -45,15 +45,26 @@ export function Header() {
         <div className="text-xl font-bold cursor-pointer" onClick={() => navigate("/")}>StandupSync</div>
         <div className="flex items-center gap-4">
           {isAdmin && (
-            <Button
-              variant={location.pathname === '/manage-users' ? 'default' : 'ghost'}
-              size="sm"
-              onClick={() => navigate('/manage-users')}
-              className="gap-2"
-            >
-              <Users className="h-4 w-4" />
-              Manage Users
-            </Button>
+            <>
+              <Button
+                variant={location.pathname === '/manage-users' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => navigate('/manage-users')}
+                className="gap-2"
+              >
+                <Users className="h-4 w-4" />
+                Manage Users
+              </Button>
+              <Button
+                variant={location.pathname === '/settings' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => navigate('/settings')}
+                className="gap-2"
+              >
+                <Settings className="h-4 w-4" />
+                Settings
+              </Button>
+            </>
           )}
           <ThemeToggle />
           <Button variant="ghost" size="icon" onClick={handleLogout}>

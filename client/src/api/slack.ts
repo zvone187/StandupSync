@@ -43,6 +43,19 @@ export const getSlackChannels = async (accessToken: string) => {
   }
 };
 
+// Description: Send a test message to Slack
+// Endpoint: POST /api/slack/test
+// Request: {}
+// Response: { success: boolean, message: string }
+export const testSlackMessage = async () => {
+  try {
+    const response = await api.post('/api/slack/test');
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.error || error.message);
+  }
+};
+
 // Description: Disconnect Slack integration
 // Endpoint: POST /api/slack/disconnect
 // Request: {}
