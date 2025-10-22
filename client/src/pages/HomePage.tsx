@@ -142,7 +142,13 @@ export function HomePage() {
   const handleCreateStandup = async (data: { yesterday: string; today: string; blockers: string }) => {
     try {
       console.log('Creating stand-up for today...');
-      const today = formatDateForAPI(new Date());
+      // Use the actual current date (today), not selectedDate
+      // The create card only shows when selectedDate === today anyway
+      const todayDate = new Date();
+      todayDate.setHours(0, 0, 0, 0); // Reset to midnight local time
+      const dateToUse = formatDateForAPI(todayDate);
+
+      console.log('Creating standup for date:', dateToUse);
 
       // Convert strings to arrays by splitting on newlines and filtering empty lines
       const yesterdayWork = data.yesterday.split('\n').filter(line => line.trim());
@@ -150,7 +156,7 @@ export function HomePage() {
       const blockers = data.blockers.split('\n').filter(line => line.trim());
 
       const response = await createStandup({
-        date: today,
+        date: dateToUse,
         yesterdayWork,
         todayPlan,
         blockers,
@@ -220,7 +226,10 @@ export function HomePage() {
     const standupDate = s.date.split('T')[0]; // Extract YYYY-MM-DD from ISO string
     return standupDate === todayDate;
   });
-  const shouldShowCreateCard = isViewingOwnStandups && !hasTodayStandup && selectedDate && formatDateForAPI(selectedDate) === todayDate;
+  // Only show create card when viewing own standups, no standup exists for today,
+  // and either no date is selected OR today is selected
+  const isViewingToday = !selectedDate || formatDateForAPI(selectedDate) === todayDate;
+  const shouldShowCreateCard = isViewingOwnStandups && !hasTodayStandup && isViewingToday && weekOffset === 0;
 
   if (loading && teamMembers.length === 0) {
     return (

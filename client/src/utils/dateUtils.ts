@@ -33,8 +33,17 @@ export const getWeekRange = (weekOffset: number = 0): { start: Date; end: Date }
 };
 
 export const isDateToday = (date: string | Date): boolean => {
-  const dateObj = typeof date === 'string' ? parseISO(date) : date;
-  return isToday(dateObj);
+  // Normalize both dates to YYYY-MM-DD format for comparison
+  // This handles both ISO strings (2025-10-21T00:00:00.000Z) and simple dates (2025-10-21)
+  let dateStr: string;
+  if (typeof date === 'string') {
+    dateStr = date.split('T')[0]; // Extract YYYY-MM-DD from ISO string
+  } else {
+    dateStr = format(date, 'yyyy-MM-dd');
+  }
+
+  const todayStr = format(new Date(), 'yyyy-MM-dd');
+  return dateStr === todayStr;
 };
 
 export const isDatePast = (date: string | Date): boolean => {
