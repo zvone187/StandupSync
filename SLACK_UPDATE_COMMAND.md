@@ -15,11 +15,9 @@ The `/standup-update` command allows you to add work updates throughout the day 
 
 ### The Concept
 
-When you use `/standup-update` today, the update is added to **tomorrow's standup** under "Today Plan".
+When you use `/standup-update` today, the update is added to **tomorrow's standup** under "What you worked on yesterday".
 
-**Tomorrow**, when you submit your standup:
-- Today's updates become "Yesterday Work" (what you accomplished)
-- You add new items to "Today Plan" (what you'll do)
+This allows you to build up tomorrow's standup throughout the day, capturing work as you complete it.
 
 ### Example Timeline
 
@@ -27,20 +25,20 @@ When you use `/standup-update` today, the update is added to **tomorrow's standu
 ```
 /standup-update I completed the API integration
 ```
-→ Saved to Tuesday's standup, "Today Plan" field
+→ Saved to Tuesday's standup, "Yesterday Work" field
 
 **Monday 4:30 PM:**
 ```
 /standup-update I fixed the authentication bug
 ```
-→ Added to Tuesday's standup, "Today Plan" field
+→ Added to Tuesday's standup, "Yesterday Work" field
 
 **Tuesday morning** - when you open StandupSync:
 - Your standup already shows:
-  - **Yesterday Work:** (empty - you'll fill this in)
-  - **Today Plan:**
+  - **What you worked on yesterday:**
     - ✅ I completed the API integration
     - ✅ I fixed the authentication bug
+  - **What you plan to work on today:** (empty - you'll fill this in)
   - **Blockers:** (empty)
 
 ---

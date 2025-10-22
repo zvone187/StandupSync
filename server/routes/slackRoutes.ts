@@ -340,9 +340,9 @@ router.post('/update', express.urlencoded({ extended: true }), async (req: Reque
     const updateItem = text.trim();
 
     if (standup) {
-      // Add to existing standup's todayPlan
-      if (!standup.todayPlan.includes(updateItem)) {
-        standup.todayPlan.push(updateItem);
+      // Add to existing standup's yesterdayWork
+      if (!standup.yesterdayWork.includes(updateItem)) {
+        standup.yesterdayWork.push(updateItem);
         standup.updatedAt = new Date();
         await standup.save();
 
@@ -350,7 +350,7 @@ router.post('/update', express.urlencoded({ extended: true }), async (req: Reque
 
         return res.json({
           response_type: 'ephemeral',
-          text: `✅ Added to tomorrow's standup:\n• ${updateItem}\n\n_This will appear in tomorrow's standup under "What you did today"_`,
+          text: `✅ Added to tomorrow's standup:\n• ${updateItem}\n\n_This will appear in tomorrow's standup under "What you worked on yesterday"_`,
         });
       } else {
         return res.json({
@@ -359,13 +359,13 @@ router.post('/update', express.urlencoded({ extended: true }), async (req: Reque
         });
       }
     } else {
-      // Create new standup for tomorrow with this item in todayPlan
+      // Create new standup for tomorrow with this item in yesterdayWork
       const newStandup = new Standup({
         userId: user._id,
         teamId: user.teamId,
         date: tomorrow,
-        yesterdayWork: [],
-        todayPlan: [updateItem],
+        yesterdayWork: [updateItem],
+        todayPlan: [],
         blockers: [],
         submittedAt: new Date(),
         updatedAt: new Date(),
@@ -376,7 +376,7 @@ router.post('/update', express.urlencoded({ extended: true }), async (req: Reque
 
       return res.json({
         response_type: 'ephemeral',
-        text: `✅ Added to tomorrow's standup:\n• ${updateItem}\n\n_This will appear in tomorrow's standup under "What you did today"_`,
+        text: `✅ Added to tomorrow's standup:\n• ${updateItem}\n\n_This will appear in tomorrow's standup under "What you worked on yesterday"_`,
       });
     }
   } catch (error) {
