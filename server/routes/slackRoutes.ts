@@ -306,32 +306,63 @@ router.post('/test', requireRole(ROLES.ADMIN), async (req: Request, res: Respons
       });
     }
 
-    // Send test message
-    const testMessage = {
-      channel: settings.slackChannelId,
-      text: `🧪 *Test Message from StandupSync*\n\nThis is a test message to verify your Slack integration is working correctly!\n\n✅ If you can see this message, your Slack integration is configured properly.\n\n_Sent by ${currentUser.name || currentUser.email} at ${new Date().toLocaleString()}_`,
-    };
-
     const { WebClient } = await import('@slack/web-api');
     const client = new WebClient(settings.slackAccessToken);
 
-    const result = await client.chat.postMessage(testMessage);
+    try {
+      // Try to join the channel first (in case bot is not in it)
+      try {
+        await client.conversations.join({ channel: settings.slackChannelId });
+        console.log(`✅ Bot joined channel ${settings.slackChannelId}`);
+      } catch (joinError: any) {
+        // Ignore if already in channel or if it's a public channel that doesn't need joining
+        console.log(`ℹ️ Channel join result:`, joinError.message);
+      }
 
-    if (result.ok) {
-      console.log(`✅ Test message sent successfully to channel ${settings.slackChannelId}`);
-      res.status(200).json({
-        success: true,
-        message: 'Test message sent successfully! Check your Slack channel.'
-      });
-    } else {
-      console.error(`❌ Failed to send test message:`, result.error);
-      res.status(400).json({
+      // Send test message
+      const testMessage = {
+        channel: settings.slackChannelId,
+        text: `🧪 *Test Message from StandupSync*\n\nThis is a test message to verify your Slack integration is working correctly!\n\n✅ If you can see this message, your Slack integration is configured properly.\n\n_Sent by ${currentUser.name || currentUser.email} at ${new Date().toLocaleString()}_`,
+      };
+
+      const result = await client.chat.postMessage(testMessage);
+
+      if (result.ok) {
+        console.log(`✅ Test message sent successfully to channel ${settings.slackChannelId}`);
+        res.status(200).json({
+          success: true,
+          message: 'Test message sent successfully! Check your Slack channel.'
+        });
+      } else {
+        console.error(`❌ Failed to send test message:`, result.error);
+        res.status(400).json({
+          success: false,
+          error: result.error || 'Failed to send test message'
+        });
+      }
+    } catch (error: any) {
+      console.error('❌ Error sending test message:', error);
+
+      // Provide helpful error messages based on the error type
+      let errorMessage = error.message || 'Failed to send test message';
+
+      if (error.message?.includes('not_in_channel')) {
+        errorMessage = 'Bot is not in the channel. Please invite the bot to the channel and try again. In Slack, go to the channel, click the channel name, click "Integrations" tab, and add your StandupSync bot.';
+      } else if (error.message?.includes('missing_scope')) {
+        errorMessage = `Missing required permission: ${error.data?.needed || 'chat:write'}. Please update your bot's permissions in the Slack App settings.`;
+      } else if (error.message?.includes('channel_not_found')) {
+        errorMessage = 'Channel not found. Please verify the Channel ID is correct.';
+      } else if (error.message?.includes('invalid_auth')) {
+        errorMessage = 'Invalid Slack token. Please reconnect your Slack integration.';
+      }
+
+      res.status(500).json({
         success: false,
-        error: result.error || 'Failed to send test message'
+        error: errorMessage
       });
     }
   } catch (error) {
-    console.error('❌ Error sending test message:', error);
+    console.error('❌ Error in test endpoint:', error);
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to send test message'

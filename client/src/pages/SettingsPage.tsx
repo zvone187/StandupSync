@@ -253,6 +253,23 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
+                <div className="p-4 border rounded-lg bg-amber-50 dark:bg-amber-950">
+                  <p className="text-sm font-medium text-amber-900 dark:text-amber-100 mb-2">
+                    ⚠️ Required Permissions
+                  </p>
+                  <p className="text-xs text-amber-700 dark:text-amber-300 mb-2">
+                    Make sure your Slack bot has these permissions:
+                  </p>
+                  <ul className="text-xs text-amber-700 dark:text-amber-300 list-disc list-inside space-y-1">
+                    <li><code className="bg-amber-100 dark:bg-amber-900 px-1 py-0.5 rounded">chat:write</code> - Post messages</li>
+                    <li><code className="bg-amber-100 dark:bg-amber-900 px-1 py-0.5 rounded">chat:write.public</code> - Post to public channels</li>
+                    <li><code className="bg-amber-100 dark:bg-amber-900 px-1 py-0.5 rounded">channels:join</code> - Join channels automatically</li>
+                  </ul>
+                  <p className="text-xs text-amber-700 dark:text-amber-300 mt-2">
+                    If you get an error, you may need to <strong>reinstall the bot</strong> to your workspace after adding these permissions.
+                  </p>
+                </div>
+
                 <Button
                   onClick={handleTestMessage}
                   disabled={testingSlack}

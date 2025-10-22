@@ -47,8 +47,9 @@ Once configured, your team will get:
    Required scopes:
    - `chat:write` - Post messages to channels
    - `chat:write.public` - Post to public channels without joining
-   - `commands` - Create slash commands
+   - `channels:join` - Join public channels
    - `channels:read` - View basic channel information
+   - `commands` - Create slash commands (optional, for slash command feature)
 
 3. **Install App to Workspace**
    - Scroll to top of page
