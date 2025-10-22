@@ -327,17 +327,24 @@ router.post('/update', express.urlencoded({ extended: true }), async (req: Reque
       });
     }
 
-    // Get tomorrow's date at UTC midnight
+    // Calculate target date for standup
+    // Since we can't know the user's timezone from Slack, we use a heuristic:
+    // - If it's before 6 AM UTC, assume user is ahead of UTC (e.g., Europe/Asia)
+    //   In this case, use current UTC date (which is "tomorrow" for them)
+    // - Otherwise, use UTC date + 1 day
     const now = new Date();
-    const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0, 0));
+    const utcHour = now.getUTCHours();
+    const daysToAdd = utcHour < 6 ? 0 : 1;
+    const targetDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysToAdd, 0, 0, 0, 0));
 
-    console.log(`📅 Current UTC date: ${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`);
-    console.log(`📅 Tomorrow's standup date: ${tomorrow.toISOString().split('T')[0]}`);
+    console.log(`📅 Current UTC: ${now.toISOString()}`);
+    console.log(`📅 UTC Hour: ${utcHour}, Days to add: ${daysToAdd}`);
+    console.log(`📅 Target standup date: ${targetDate.toISOString().split('T')[0]}`);
 
-    // Find or create tomorrow's standup
+    // Find or create standup for target date
     let standup = await Standup.findOne({
       userId: user._id,
-      date: tomorrow,
+      date: targetDate,
     });
 
     const updateItem = text.trim();
@@ -349,24 +356,24 @@ router.post('/update', express.urlencoded({ extended: true }), async (req: Reque
         standup.updatedAt = new Date();
         await standup.save();
 
-        console.log(`✅ Added update to tomorrow's standup for ${user.email}`);
+        console.log(`✅ Added update to standup for ${user.email} on ${targetDate.toISOString().split('T')[0]}`);
 
         return res.json({
           response_type: 'ephemeral',
-          text: `✅ Added to tomorrow's standup:\n• ${updateItem}\n\n_This will appear in tomorrow's standup under "What you worked on yesterday"_`,
+          text: `✅ Added to your standup for ${targetDate.toISOString().split('T')[0]}:\n• ${updateItem}\n\n_This will appear under "What you worked on yesterday"_`,
         });
       } else {
         return res.json({
           response_type: 'ephemeral',
-          text: `ℹ️ This update already exists in tomorrow's standup:\n• ${updateItem}`,
+          text: `ℹ️ This update already exists in your standup:\n• ${updateItem}`,
         });
       }
     } else {
-      // Create new standup for tomorrow with this item in yesterdayWork
+      // Create new standup for target date with this item in yesterdayWork
       const newStandup = new Standup({
         userId: user._id,
         teamId: user.teamId,
-        date: tomorrow,
+        date: targetDate,
         yesterdayWork: [updateItem],
         todayPlan: [],
         blockers: [],
@@ -375,11 +382,11 @@ router.post('/update', express.urlencoded({ extended: true }), async (req: Reque
       });
       await newStandup.save();
 
-      console.log(`✅ Created tomorrow's standup with update for ${user.email}`);
+      console.log(`✅ Created standup with update for ${user.email} on ${targetDate.toISOString().split('T')[0]}`);
 
       return res.json({
         response_type: 'ephemeral',
-        text: `✅ Added to tomorrow's standup:\n• ${updateItem}\n\n_This will appear in tomorrow's standup under "What you worked on yesterday"_`,
+        text: `✅ Added to your standup for ${targetDate.toISOString().split('T')[0]}:\n• ${updateItem}\n\n_This will appear under "What you worked on yesterday"_`,
       });
     }
   } catch (error) {
