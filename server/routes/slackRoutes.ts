@@ -182,8 +182,9 @@ router.post('/command', express.urlencoded({ extended: true }), async (req: Requ
     }
 
     // Check if standup already exists for today
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Use UTC midnight for the current date to ensure consistency
+    const now = new Date();
+    const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0));
 
     const existingStandup = await Standup.findOne({
       userId: user._id,

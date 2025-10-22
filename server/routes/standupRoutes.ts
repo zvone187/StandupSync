@@ -31,8 +31,9 @@ router.get('/', requireUser(), async (req: Request, res: Response) => {
 
     // Filter by date if provided
     if (date) {
-      // Parse date as UTC to avoid timezone issues
-      const targetDate = new Date(date as string + 'T00:00:00.000Z');
+      // Parse date as UTC midnight to avoid timezone issues
+      const [year, month, day] = (date as string).split('-').map(Number);
+      const targetDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
       query.date = targetDate;
     }
 
@@ -67,8 +68,10 @@ router.get('/range', requireUser(), async (req: Request, res: Response) => {
     }
 
     // Parse dates as UTC to avoid timezone issues
-    const startDateUTC = new Date(startDate as string + 'T00:00:00.000Z');
-    const endDateUTC = new Date(endDate as string + 'T23:59:59.999Z');
+    const [startYear, startMonth, startDay] = (startDate as string).split('-').map(Number);
+    const [endYear, endMonth, endDay] = (endDate as string).split('-').map(Number);
+    const startDateUTC = new Date(Date.UTC(startYear, startMonth - 1, startDay, 0, 0, 0, 0));
+    const endDateUTC = new Date(Date.UTC(endYear, endMonth - 1, endDay, 23, 59, 59, 999));
 
     const query: any = {
       teamId: currentUser.teamId,
@@ -109,8 +112,9 @@ router.get('/team/:date', requireUser(), async (req: Request, res: Response) => 
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Parse date as UTC to avoid timezone issues
-    const targetDate = new Date(date + 'T00:00:00.000Z');
+    // Parse date as UTC midnight to avoid timezone issues
+    const [year, month, day] = date.split('-').map(Number);
+    const targetDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
 
     console.log(`👥 Fetching team standups for ${date}`);
     const standups = await Standup.find({
@@ -147,8 +151,10 @@ router.post('/', requireUser(), async (req: Request, res: Response) => {
 
     console.log(`📝 Creating standup for ${currentUser.email} on ${date}`);
 
-    // Parse date as UTC to avoid timezone issues
-    const targetDate = new Date(date + 'T00:00:00.000Z');
+    // Parse the date string and create a Date object at UTC midnight for that date
+    // This ensures the date is stored consistently regardless of server timezone
+    const [year, month, day] = date.split('-').map(Number);
+    const targetDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
 
     // Check if standup already exists for this user and date
     const existingStandup = await Standup.findOne({

@@ -56,5 +56,10 @@ export const canEditStandup = (date: string): boolean => {
 };
 
 export const formatDateForAPI = (date: Date): string => {
-  return format(date, 'yyyy-MM-dd');
+  // Format date as YYYY-MM-DD using local date components
+  // The backend will parse this as UTC midnight for that date
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 };

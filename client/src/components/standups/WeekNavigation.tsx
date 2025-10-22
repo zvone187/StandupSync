@@ -27,14 +27,18 @@ export function WeekNavigation({
 }: WeekNavigationProps) {
   const getBlockerCount = (date: Date): number => {
     const dateStr = formatDateForAPI(date);
-    const standup = standups.find((s) => s.date === dateStr);
+    // Compare with the date portion of the ISO string (YYYY-MM-DD)
+    // Backend stores dates as UTC midnight, so we extract just the date part
+    const standup = standups.find((s) => s.date.split('T')[0] === dateStr);
     if (!standup || !standup.blockers) return 0;
     return countBlockers(standup.blockers);
   };
 
   const hasStandup = (date: Date): boolean => {
     const dateStr = formatDateForAPI(date);
-    return standups.some((s) => s.date === dateStr);
+    // Compare with the date portion of the ISO string (YYYY-MM-DD)
+    // Backend stores dates as UTC midnight, so we extract just the date part
+    return standups.some((s) => s.date.split('T')[0] === dateStr);
   };
 
   return (

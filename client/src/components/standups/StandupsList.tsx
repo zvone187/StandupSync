@@ -11,7 +11,9 @@ interface StandupsListProps {
 
 export function StandupsList({ standups, dates, isOwn, onUpdate }: StandupsListProps) {
   const getStandupForDate = (date: string): Standup | null => {
-    return standups.find((s) => format(parseISO(s.date), 'yyyy-MM-dd') === date) || null;
+    // Extract YYYY-MM-DD directly from ISO string to avoid timezone conversion issues
+    // The backend stores dates as UTC midnight, so we want to match the date portion only
+    return standups.find((s) => s.date.split('T')[0] === date) || null;
   };
 
   if (dates.length === 0) {
