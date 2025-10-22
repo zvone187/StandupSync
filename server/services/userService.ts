@@ -193,6 +193,32 @@ class UserService {
       throw new Error(`Database error while updating user active status: ${err}`);
     }
   }
+
+  /**
+   * Update user's Slack user ID
+   */
+  static async updateSlackUserId(userId: string, slackUserId: string | null): Promise<IUser | null> {
+    try {
+      return await User.findOneAndUpdate(
+        { _id: userId },
+        { slackUserId },
+        { new: true }
+      ).exec();
+    } catch (err) {
+      throw new Error(`Database error while updating user Slack ID: ${err}`);
+    }
+  }
+
+  /**
+   * Get user by Slack user ID
+   */
+  static async getBySlackUserId(slackUserId: string): Promise<IUser | null> {
+    try {
+      return await User.findOne({ slackUserId }).exec();
+    } catch (err) {
+      throw new Error(`Database error while getting user by Slack ID: ${err}`);
+    }
+  }
 }
 
 export default UserService;

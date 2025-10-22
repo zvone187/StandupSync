@@ -90,3 +90,16 @@ export const deleteUser = async (userId: string) => {
     throw new Error(error?.response?.data?.error || error.message);
   }
 };
+
+// Description: Update user's Slack user ID (admin only)
+// Endpoint: PUT /api/users/:userId/slack
+// Request: { slackUserId: string }
+// Response: { user: User }
+export const updateUserSlackId = async (userId: string, slackUserId: string | null) => {
+  try {
+    const response = await api.put(`/api/users/${userId}/slack`, { slackUserId });
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.error || error.message);
+  }
+};

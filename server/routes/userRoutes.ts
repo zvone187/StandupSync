@@ -222,6 +222,44 @@ router.put('/:id/status', requireRole(ROLES.ADMIN), async (req: Request, res: Re
   }
 });
 
+// Description: Update user's Slack user ID (admin only)
+// Endpoint: PUT /api/users/:id/slack
+// Request: { slackUserId: string }
+// Response: { user: User }
+router.put('/:id/slack', requireRole(ROLES.ADMIN), async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const { slackUserId } = req.body;
+    const currentUser = req.user;
+
+    if (!currentUser) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Check if target user is in the same team
+    const targetUser = await UserService.get(id);
+    if (!targetUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (targetUser.teamId.toString() !== currentUser.teamId.toString()) {
+      return res.status(403).json({ error: 'Cannot modify users from other teams' });
+    }
+
+    console.log(`🔗 Admin ${currentUser.email} updating Slack ID for ${targetUser.email} to ${slackUserId || 'null'}`);
+    const updatedUser = await UserService.updateSlackUserId(id, slackUserId || null);
+
+    if (!updatedUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.status(200).json({ user: updatedUser });
+  } catch (error) {
+    console.error('❌ Error updating user Slack ID:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to update user Slack ID' });
+  }
+});
+
 // Description: Delete user (admin only)
 // Endpoint: DELETE /api/users/:id
 // Request: {}

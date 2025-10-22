@@ -68,3 +68,16 @@ export const disconnectSlack = async () => {
     throw new Error(error?.response?.data?.error || error.message);
   }
 };
+
+// Description: Get Slack workspace members
+// Endpoint: POST /api/slack/members
+// Request: { accessToken: string }
+// Response: { members: Array<{ id: string, name: string, real_name: string, profile: object }> }
+export const getSlackMembers = async (accessToken: string) => {
+  try {
+    const response = await api.post('/api/slack/members', { accessToken });
+    return response.data;
+  } catch (error: any) {
+    throw new Error(error?.response?.data?.error || error.message);
+  }
+};

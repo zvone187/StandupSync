@@ -6,6 +6,7 @@ import { ROLES } from 'shared';
 import crypto from 'crypto';
 import Standup from '../models/Standup';
 import User from '../models/User';
+import UserService from '../services/userService';
 
 const router = express.Router();
 
@@ -138,6 +139,50 @@ router.post('/channels', requireRole(ROLES.ADMIN), async (req: Request, res: Res
   }
 });
 
+// Description: Get Slack workspace members
+// Endpoint: POST /api/slack/members
+// Request: { accessToken: string }
+// Response: { members: Array<{ id: string, name: string, real_name: string, profile: object }> }
+router.post('/members', requireRole(ROLES.ADMIN), async (req: Request, res: Response) => {
+  try {
+    const { accessToken } = req.body;
+
+    if (!accessToken) {
+      return res.status(400).json({ error: 'Access token is required' });
+    }
+
+    console.log(`👥 Fetching Slack workspace members`);
+
+    const { WebClient } = await import('@slack/web-api');
+    const client = new WebClient(accessToken);
+
+    const result = await client.users.list();
+
+    if (!result.ok || !result.members) {
+      throw new Error('Failed to fetch Slack members');
+    }
+
+    // Filter out bots and deleted users, and format the response
+    const members = result.members
+      .filter((member: any) => !member.is_bot && !member.deleted && member.id !== 'USLACKBOT')
+      .map((member: any) => ({
+        id: member.id,
+        name: member.name,
+        real_name: member.real_name || member.name,
+        profile: {
+          display_name: member.profile?.display_name || member.real_name || member.name,
+          email: member.profile?.email,
+          image: member.profile?.image_48 || member.profile?.image_32,
+        },
+      }));
+
+    res.status(200).json({ members });
+  } catch (error) {
+    console.error('❌ Error fetching Slack members:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to fetch Slack members' });
+  }
+});
+
 // Description: Handle Slack slash command for standup submission
 // Endpoint: POST /api/slack/command
 // Request: Slack slash command payload (application/x-www-form-urlencoded)
@@ -257,7 +302,7 @@ router.post('/update', express.urlencoded({ extended: true }), async (req: Reque
   try {
     const { user_email, text, user_id, user_name } = req.body;
 
-    console.log(`📝 Received Slack update command from ${user_email || user_name}: "${text}"`);
+    console.log(`📝 Received Slack update command from ${user_name} (${user_id}): "${text}"`);
 
     if (!text || text.trim() === '') {
       return res.json({
@@ -266,13 +311,13 @@ router.post('/update', express.urlencoded({ extended: true }), async (req: Reque
       });
     }
 
-    // Find user by email or Slack user ID
-    let user = await User.findOne({ email: user_email });
+    // Find user by Slack user ID first, then fall back to email
+    let user = await UserService.getBySlackUserId(user_id);
 
     if (!user) {
       return res.json({
         response_type: 'ephemeral',
-        text: '❌ User not found in StandupSync. Please register at the web app first, or make sure your Slack email matches your StandupSync email.',
+        text: `❌ User not found in StandupSync. Please ask your admin to link your Slack account (@${user_name}) in the Manage Users page.`,
       });
     }
 

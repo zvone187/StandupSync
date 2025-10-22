@@ -8,4 +8,5 @@ export interface User {
   updatedAt: string;
   lastLoginAt: string;
   isActive: boolean;
+  slackUserId?: string;
 }

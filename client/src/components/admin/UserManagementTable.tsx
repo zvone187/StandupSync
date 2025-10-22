@@ -38,19 +38,35 @@ interface User {
   isActive: boolean;
   createdAt: string;
   lastLoginAt: string;
+  slackUserId?: string;
+}
+
+interface SlackMember {
+  id: string;
+  name: string;
+  real_name: string;
+  profile: {
+    display_name: string;
+    email?: string;
+    image?: string;
+  };
 }
 
 interface UserManagementTableProps {
   users: User[];
   currentUserId: string;
+  slackMembers: SlackMember[];
   onUpdateUser: (userId: string, data: { role?: string; isActive?: boolean }) => void;
+  onUpdateSlackId: (userId: string, slackUserId: string | null) => void;
   onDeleteUser: (userId: string) => void;
 }
 
 export function UserManagementTable({
   users,
   currentUserId,
+  slackMembers,
   onUpdateUser,
+  onUpdateSlackId,
   onDeleteUser,
 }: UserManagementTableProps) {
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
@@ -67,6 +83,12 @@ export function UserManagementTable({
     setUpdatingUserId(null);
   };
 
+  const handleSlackUserChange = async (userId: string, slackUserId: string) => {
+    setUpdatingUserId(userId);
+    await onUpdateSlackId(userId, slackUserId === 'none' ? null : slackUserId);
+    setUpdatingUserId(null);
+  };
+
   return (
     <div className="rounded-lg border bg-card">
       <Table>
@@ -76,6 +98,7 @@ export function UserManagementTable({
             <TableHead>Name</TableHead>
             <TableHead>Role</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>Slack User</TableHead>
             <TableHead>Created</TableHead>
             <TableHead>Last Login</TableHead>
             <TableHead className="text-right">Actions</TableHead>
@@ -126,6 +149,41 @@ export function UserManagementTable({
                       {user.isActive ? 'Active' : 'Inactive'}
                     </Badge>
                   </Button>
+                </TableCell>
+                <TableCell>
+                  <Select
+                    value={user.slackUserId || 'none'}
+                    onValueChange={(value) => handleSlackUserChange(user._id, value)}
+                    disabled={isUpdating || slackMembers.length === 0}
+                  >
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder={slackMembers.length === 0 ? 'No Slack connected' : 'Select Slack user'} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">
+                        <span className="text-muted-foreground">Not linked</span>
+                      </SelectItem>
+                      {slackMembers.map((member) => (
+                        <SelectItem key={member.id} value={member.id}>
+                          <div className="flex items-center gap-2">
+                            {member.profile.image && (
+                              <img
+                                src={member.profile.image}
+                                alt={member.profile.display_name}
+                                className="h-5 w-5 rounded-full"
+                              />
+                            )}
+                            <span>{member.profile.display_name}</span>
+                            {member.profile.email && (
+                              <span className="text-xs text-muted-foreground">
+                                ({member.profile.email})
+                              </span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
                   {format(new Date(user.createdAt), 'MMM d, yyyy')}

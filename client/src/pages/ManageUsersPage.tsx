@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { UserManagementTable } from '@/components/admin/UserManagementTable';
-import { getTeamMembers, updateUserRole, updateUserStatus, deleteUser, getCurrentUser, inviteUser } from '@/api/users';
+import { getTeamMembers, updateUserRole, updateUserStatus, deleteUser, getCurrentUser, inviteUser, updateUserSlackId } from '@/api/users';
+import { getSlackSettings, getSlackMembers } from '@/api/slack';
 import { useToast } from '@/hooks/useToast';
 import { Loader2, Users, UserPlus } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +19,18 @@ interface User {
   isActive: boolean;
   createdAt: string;
   lastLoginAt: string;
+  slackUserId?: string;
+}
+
+interface SlackMember {
+  id: string;
+  name: string;
+  real_name: string;
+  profile: {
+    display_name: string;
+    email?: string;
+    image?: string;
+  };
 }
 
 interface UserResponse {
@@ -41,6 +54,7 @@ interface CurrentUserResponse {
 export function ManageUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>('');
+  const [slackMembers, setSlackMembers] = useState<SlackMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
@@ -61,6 +75,20 @@ export function ManageUsersPage() {
         setUsers(usersResponse.users);
         setCurrentUserId(currentUserResponse.user._id);
         console.log('Team members loaded:', usersResponse.users.length);
+
+        // Fetch Slack members if Slack is connected
+        try {
+          const slackSettingsResponse = await getSlackSettings();
+          if (slackSettingsResponse.settings?.isConnected && slackSettingsResponse.settings?.slackAccessToken) {
+            console.log('Fetching Slack members...');
+            const slackMembersResponse = await getSlackMembers(slackSettingsResponse.settings.slackAccessToken);
+            setSlackMembers(slackMembersResponse.members || []);
+            console.log('Slack members loaded:', slackMembersResponse.members?.length || 0);
+          }
+        } catch (slackError) {
+          console.log('Slack not connected or error fetching members:', slackError);
+          // Don't show error toast, just leave slackMembers empty
+        }
       } catch (error: unknown) {
         console.error('Error fetching team members:', error);
         const errorMessage = error instanceof Error ? error.message : 'Failed to load team members';
@@ -136,6 +164,33 @@ export function ManageUsersPage() {
     } catch (error: unknown) {
       console.error('Error deleting user:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to delete user';
+      toast({
+        title: 'Error',
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleUpdateSlackId = async (userId: string, slackUserId: string | null) => {
+    try {
+      console.log('Updating Slack ID for user:', userId, slackUserId);
+      const response = await updateUserSlackId(userId, slackUserId) as UserResponse;
+
+      setUsers((prev) =>
+        prev.map((user) =>
+          user._id === userId ? { ...user, slackUserId: response.user.slackUserId } : user
+        )
+      );
+
+      toast({
+        title: 'Success',
+        description: slackUserId ? 'Slack user linked successfully' : 'Slack user unlinked successfully',
+      });
+      console.log('Slack ID updated successfully');
+    } catch (error: unknown) {
+      console.error('Error updating Slack ID:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update Slack ID';
       toast({
         title: 'Error',
         description: errorMessage,
@@ -299,7 +354,9 @@ export function ManageUsersPage() {
           <UserManagementTable
             users={users}
             currentUserId={currentUserId}
+            slackMembers={slackMembers}
             onUpdateUser={handleUpdateUser}
+            onUpdateSlackId={handleUpdateSlackId}
             onDeleteUser={handleDeleteUser}
           />
         </CardContent>

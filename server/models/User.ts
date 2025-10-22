@@ -16,6 +16,7 @@ export interface IUser extends Document {
   invitedAt?: Date;
   isInvited: boolean;
   name?: string;
+  slackUserId?: string;
 }
 
 const schema = new Schema<IUser>({
@@ -74,6 +75,10 @@ const schema = new Schema<IUser>({
   },
   name: {
     type: String,
+  },
+  slackUserId: {
+    type: String,
+    index: true,
   },
 }, {
   versionKey: false,
