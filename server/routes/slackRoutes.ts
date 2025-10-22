@@ -235,7 +235,7 @@ router.post('/command', express.urlencoded({ extended: true }), async (req: Requ
     // Check if standup already exists for today
     // Use UTC midnight for the current date to ensure consistency
     const now = new Date();
-    const today = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0));
+    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
 
     const existingStandup = await Standup.findOne({
       userId: user._id,
@@ -329,7 +329,10 @@ router.post('/update', express.urlencoded({ extended: true }), async (req: Reque
 
     // Get tomorrow's date at UTC midnight
     const now = new Date();
-    const tomorrow = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0));
+    const tomorrow = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0, 0));
+
+    console.log(`📅 Current UTC date: ${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, '0')}-${String(now.getUTCDate()).padStart(2, '0')}`);
+    console.log(`📅 Tomorrow's standup date: ${tomorrow.toISOString().split('T')[0]}`);
 
     // Find or create tomorrow's standup
     let standup = await Standup.findOne({
