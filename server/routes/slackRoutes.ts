@@ -139,22 +139,28 @@ router.post('/channels', requireRole(ROLES.ADMIN), async (req: Request, res: Res
   }
 });
 
-// Description: Get Slack workspace members
-// Endpoint: POST /api/slack/members
-// Request: { accessToken: string }
+// Description: Get Slack workspace members (uses team's token from settings)
+// Endpoint: GET /api/slack/members
+// Request: {}
 // Response: { members: Array<{ id: string, name: string, real_name: string, profile: object }> }
-router.post('/members', requireRole(ROLES.ADMIN), async (req: Request, res: Response) => {
+router.get('/members', requireRole(ROLES.ADMIN), async (req: Request, res: Response) => {
   try {
-    const { accessToken } = req.body;
+    const currentUser = req.user;
 
-    if (!accessToken) {
-      return res.status(400).json({ error: 'Access token is required' });
+    if (!currentUser) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    console.log(`👥 Fetching Slack workspace members`);
+    const settings = await TeamSettings.findOne({ teamId: currentUser.teamId });
+
+    if (!settings || !settings.isSlackConnected || !settings.slackAccessToken) {
+      return res.status(400).json({ error: 'Slack is not connected. Please connect Slack first.' });
+    }
+
+    console.log(`👥 Fetching Slack workspace members for team ${currentUser.teamId}`);
 
     const { WebClient } = await import('@slack/web-api');
-    const client = new WebClient(accessToken);
+    const client = new WebClient(settings.slackAccessToken);
 
     const result = await client.users.list();
 

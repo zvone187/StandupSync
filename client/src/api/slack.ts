@@ -70,12 +70,12 @@ export const disconnectSlack = async () => {
 };
 
 // Description: Get Slack workspace members
-// Endpoint: POST /api/slack/members
-// Request: { accessToken: string }
+// Endpoint: GET /api/slack/members
+// Request: {}
 // Response: { members: Array<{ id: string, name: string, real_name: string, profile: object }> }
-export const getSlackMembers = async (accessToken: string) => {
+export const getSlackMembers = async () => {
   try {
-    const response = await api.post('/api/slack/members', { accessToken });
+    const response = await api.get('/api/slack/members');
     return response.data;
   } catch (error: any) {
     throw new Error(error?.response?.data?.error || error.message);

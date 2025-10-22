@@ -79,9 +79,9 @@ export function ManageUsersPage() {
         // Fetch Slack members if Slack is connected
         try {
           const slackSettingsResponse = await getSlackSettings();
-          if (slackSettingsResponse.settings?.isConnected && slackSettingsResponse.settings?.slackAccessToken) {
+          if (slackSettingsResponse.settings?.isSlackConnected) {
             console.log('Fetching Slack members...');
-            const slackMembersResponse = await getSlackMembers(slackSettingsResponse.settings.slackAccessToken);
+            const slackMembersResponse = await getSlackMembers();
             setSlackMembers(slackMembersResponse.members || []);
             console.log('Slack members loaded:', slackMembersResponse.members?.length || 0);
           }
